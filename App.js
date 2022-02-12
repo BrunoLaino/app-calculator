@@ -1,135 +1,100 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { LogBox, Text, TouchableOpacity, View } from "react-native";
-import { CalculatorButtom } from "./CalculatorButtom";
-import { styles } from "./Styles";
+import React, { Component, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import Button from "./src/components/Button";
+import Display from "./src/components/Display";
 
 export default function App() {
-  LogBox.ignoreAllLogs;
-  console.disableYellowBox = true;
-  const [firstNum, setFirstNum] = useState(0);
-  const [secondNum, setSecondNum] = useState(0);
-  const [mathematicalSign, setMathematicalSign] = useState("");
-  const [calc, setCalc] = useState("0");
+  const [initialState, setInitialState] = useState({
+    displayValue: "0",
+    clearDisplay: false,
+    operation: null,
+    values: [0, 0],
+    current: 0,
+  });
+  const [state, setState] = useState({ ...initialState });
 
-  var buttons = [];
+  addDigit = (n) => {
+    let newState = { ...state };
 
-  function createCalculatorButtons() {
-    for (var i = 0; i <= 9; i++) {
-      buttons.push(i);
+    const clearDisplay = state.displayValue === "0" || state.clearDisplay;
+
+    if (n === "." && !clearDisplay && newState.displayValue.includes(".")) {
+      return;
     }
-
-    buttons.push("AC");
-  }
-
-  function calculator(n) {
-    if (mathematicalSign == "") {
-      setFirstNum(parseInt(firstNum.toString() + n.toString()));
-      setCalc(parseInt(firstNum.toString() + n.toString()));
+    const currentValue = clearDisplay ? "" : state.displayValue;
+    const displayValue = currentValue + n;
+    newState.displayValue = displayValue;
+    newState.clearDisplay = false;
+    setState({ ...newState });
+    console.log(state);
+    if (n !== ".") {
+      const newValue = parseFloat(displayValue);
+      const values = [...state.values];
+      values[state.current] = newValue;
+      newState.values = values;
+      setState({ ...newState });
     }
+  };
 
-    if ((n == "+" || n == "-" || n == "*" || n == "+/") && secondNum == 0) {
-      setCalc(firstNum.toString() + n);
-      setMathematicalSign(n);
-    }
+  clearMemory = () => {
+    setState({ ...initialState });
+  };
 
-    if (mathematicalSign != "") {
-      setSecondNum(parseInt(secondNum.toString() + n.toString()));
-      setCalc(
-        firstNum +
-          mathematicalSign +
-          parseInt(secondNum.toString() + n.toString())
-      );
-    }
-
-    if (n == "=") {
-      let result = 0;
-      if (mathematicalSign == "+") {
-        result = firstNum + secondNum;
-      } else if (mathematicalSign == "-") {
-        result = firstNum - secondNum;
-      } else if (mathematicalSign == "*") {
-        result = firstNum * secondNum;
-      } else if (mathematicalSign == "/") {
-        result = firstNum / secondNum;
+  setOperation = (operation) => {
+    if (state.current === 0) {
+      setState({ ...state, operation, current: 1, clearDisplay: true });
+    } else {
+      const equals = operation === "=";
+      const values = [...state.values];
+      try {
+        values[0] = eval(`${values[0]} ${state.operation} ${values[1]}`);
+      } catch (e) {
+        values[0] = state.values[0];
       }
 
-      continueCalculator(result);
+      values[1] = setState({
+        displayValue: `${values[0]}`,
+        clearDisplay: true,
+        operation: equals ? null : operation,
+        values,
+        current: equals ? 0 : 1,
+      });
     }
-
-    if (n == "AC") {
-      resetCalculator();
-    }
-  }
-
-  function resetCalculator() {
-    setCalc("0");
-    setMathematicalSign("");
-    setFirstNum(0);
-    setSecondNum(0);
-  }
-
-  function continueCalculator(result) {
-    setCalc(result);
-    setMathematicalSign("");
-    setFirstNum(result);
-    setSecondNum(0);
-  }
-
-  createCalculatorButtons();
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "black" }}>
-      <StatusBar hidden />
-      <View style={styles.top}>
-        <Text style={styles.fontColorCalc}>{calc}</Text>
-      </View>
-
-      <View
-        style={{ flexDirection: "row", height: "16.6%", alignItems: "center" }}
-      >
-        <TouchableOpacity
-          onPress={() => calculator("+")}
-          style={styles.btnMathematicalSign}
-        >
-          <Text style={styles.fontColorCalc}>+</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => calculator("-")}
-          style={styles.btnMathematicalSign}
-        >
-          <Text style={styles.fontColorCalc}>-</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => calculator("/")}
-          style={styles.btnMathematicalSign}
-        >
-          <Text style={styles.fontColorCalc}>/</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => calculator("*")}
-          style={styles.btnMathematicalSign}
-        >
-          <Text style={styles.fontColorCalc}>*</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => calculator("=")}
-          style={styles.btnMathematicalSign}
-        >
-          <Text style={styles.fontColorCalc}>=</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.btnMenu}>
-        {buttons.map(function (val) {
-          return (
-            <CalculatorButtom
-              calculator={calculator}
-              buttom={val}
-            ></CalculatorButtom>
-          );
-        })}
+    <View style={styles.container}>
+      <Display value={state.displayValue}></Display>
+      <View style={styles.buttons}>
+        <Button label="AC" triple onClick={clearMemory}></Button>
+        <Button label="/" operation onClick={setOperation}></Button>
+        <Button label="7" onClick={addDigit}></Button>
+        <Button label="8" onClick={addDigit}></Button>
+        <Button label="9" onClick={addDigit}></Button>
+        <Button label="*" operation onClick={setOperation}></Button>
+        <Button label="4" onClick={addDigit}></Button>
+        <Button label="5" onClick={addDigit}></Button>
+        <Button label="6" onClick={addDigit}></Button>
+        <Button label="-" operation onClick={setOperation}></Button>
+        <Button label="1" onClick={addDigit}></Button>
+        <Button label="2" onClick={addDigit}></Button>
+        <Button label="3" onClick={addDigit}></Button>
+        <Button label="+" operation onClick={setOperation}></Button>
+        <Button label="0" double onClick={addDigit}></Button>
+        <Button label="." onClick={addDigit}></Button>
+        <Button label="=" operation onClick={setOperation}></Button>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  buttons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+});

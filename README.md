@@ -60,7 +60,7 @@ As seguintes ferramentas foram usadas na construção do projeto:
 
 - [✔️] Aparencia da calculadora
 - [✔️] Lógia da calculadora
-- [🔄] Melhorar a lógia da calculadora
+- [✔️] Melhorar a lógia da calculadora
 - [🔄] Adicionar mais operações
 
 
