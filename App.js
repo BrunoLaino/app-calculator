@@ -1,8 +1,13 @@
-import { StatusBar } from "expo-status-bar";
-import React, { Component, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import Button from "./src/components/Button";
+import React, { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import axios from "axios";
+
 import Display from "./src/components/Display";
+import Key from "./src/components/Keys";
+
+import { server } from "./src/common";
+
+
 
 export default function App() {
   const [initialState, setInitialState] = useState({
@@ -12,78 +17,104 @@ export default function App() {
     values: [0, 0],
     current: 0,
   });
-  const [state, setState] = useState({ ...initialState });
 
-  addDigit = (n) => {
-    let newState = { ...state };
+  const [calculatorState, setCalculatorState] = useState({
+    displayValue: "0",
+    clearDisplay: false,
+    operation: null,
+    values: [0, 0],
+    current: 0,
+  });
 
-    const clearDisplay = state.displayValue === "0" || state.clearDisplay;
+  const addDigit = (n) => {
+    const clearDisplay =
+      calculatorState.displayValue === "0" || calculatorState.clearDisplay;
 
-    if (n === "." && !clearDisplay && newState.displayValue.includes(".")) {
+    if (
+      n === "." &&
+      !clearDisplay &&
+      calculatorState.displayValue.includes(".")
+    ) {
       return;
     }
-    const currentValue = clearDisplay ? "" : state.displayValue;
+
+    const currentValue = clearDisplay ? "" : calculatorState.displayValue;
     const displayValue = currentValue + n;
-    newState.displayValue = displayValue;
-    newState.clearDisplay = false;
-    setState({ ...newState });
-    console.log(state);
+    setCalculatorState((previousState) => {
+      return {
+        ...previousState,
+        displayValue: displayValue,
+        clearDisplay: false,
+      };
+    });
     if (n !== ".") {
       const newValue = parseFloat(displayValue);
-      const values = [...state.values];
-      values[state.current] = newValue;
-      newState.values = values;
-      setState({ ...newState });
+      const values = [...calculatorState.values];
+      values[calculatorState.current] = newValue;
+      setCalculatorState((previousState) => {
+        return { ...previousState, values };
+      });
     }
   };
 
-  clearMemory = () => {
-    setState({ ...initialState });
+  const clearMemory = () => {
+    setCalculatorState({ ...initialState });
   };
 
-  setOperation = (operation) => {
-    if (state.current === 0) {
-      setState({ ...state, operation, current: 1, clearDisplay: true });
-    } else {
-      const equals = operation === "=";
-      const values = [...state.values];
-      try {
-        values[0] = eval(`${values[0]} ${state.operation} ${values[1]}`);
-      } catch (e) {
-        values[0] = state.values[0];
-      }
-
-      values[1] = setState({
-        displayValue: `${values[0]}`,
-        clearDisplay: true,
-        operation: equals ? null : operation,
-        values,
-        current: equals ? 0 : 1,
+  const setOperation = (operation) => {
+    if (calculatorState.current === "0") {
+      setCalulatorState((previousState) => {
+        return { ...previousState, operation, current: 1, clearDisplay: true };
       });
+    } else {
+      axios.defaults.headers.post['Content-Type'] = 'application/json';
+      axios
+        .post(`${server}/operations`, {
+          values: [...calculatorState.values],
+          operation: calculatorState.operation,
+        })
+        .then(function (response) {
+          const equals = operation === "=";
+          setCalculatorState({
+            displayValue: `${response.data.values[0]}`,
+            operation: equals ? null : operation,
+            current: equals ? 0 : 1,
+            clearDisplay: true,
+            values: response.data.values,
+          });
+        })
+        .catch(function (error) {
+          console.log(
+            "There has been a problem with your fetch operation: " +
+              error.message
+          );
+          alert(error.message);          
+          throw error;
+        });
     }
   };
 
   return (
     <View style={styles.container}>
-      <Display value={state.displayValue}></Display>
-      <View style={styles.buttons}>
-        <Button label="AC" triple onClick={clearMemory}></Button>
-        <Button label="/" operation onClick={setOperation}></Button>
-        <Button label="7" onClick={addDigit}></Button>
-        <Button label="8" onClick={addDigit}></Button>
-        <Button label="9" onClick={addDigit}></Button>
-        <Button label="*" operation onClick={setOperation}></Button>
-        <Button label="4" onClick={addDigit}></Button>
-        <Button label="5" onClick={addDigit}></Button>
-        <Button label="6" onClick={addDigit}></Button>
-        <Button label="-" operation onClick={setOperation}></Button>
-        <Button label="1" onClick={addDigit}></Button>
-        <Button label="2" onClick={addDigit}></Button>
-        <Button label="3" onClick={addDigit}></Button>
-        <Button label="+" operation onClick={setOperation}></Button>
-        <Button label="0" double onClick={addDigit}></Button>
-        <Button label="." onClick={addDigit}></Button>
-        <Button label="=" operation onClick={setOperation}></Button>
+      <Display value={calculatorState.displayValue} />
+      <View style={styles.keyboard}>
+        <Key label="AC" triple onClick={clearMemory} />
+        <Key label="/" operation onClick={setOperation} />
+        <Key label="7" onClick={addDigit} />
+        <Key label="8" onClick={addDigit} />
+        <Key label="9" onClick={addDigit} />
+        <Key label="*" operation onClick={setOperation} />
+        <Key label="4" onClick={addDigit} />
+        <Key label="5" onClick={addDigit} />
+        <Key label="6" onClick={addDigit} />
+        <Key label="-" operation onClick={setOperation} />
+        <Key label="1" onClick={addDigit} />
+        <Key label="2" onClick={addDigit} />
+        <Key label="3" onClick={addDigit} />
+        <Key label="+" operation onClick={setOperation} />
+        <Key label="0" double onClick={addDigit} />
+        <Key label="." onClick={addDigit} />
+        <Key label="=" operation onClick={setOperation} />
       </View>
     </View>
   );
@@ -93,7 +124,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  buttons: {
+  keyboard: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
