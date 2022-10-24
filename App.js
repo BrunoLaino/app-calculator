@@ -61,36 +61,6 @@ export default function App() {
     setCalculatorState({ ...initialState });
   };
 
-  /*
-  const setOperation = (operation) => {
-    if (calculcatorState.current === 0) {
-      setCalulatorState((previousState) => {
-        return { ...previousState, operation, current: 1, clearDisplay: true };
-      });
-    } else {
-      const equals = operation === "=";
-      const values = [...calculatorState.values];
-      try {
-        values[0] = eval(
-          `${values[0]} ${calculatorState.operation} ${values[1]}`
-        );
-      } catch (e) {
-        values[0] = calculatorState.values[0];
-      }
-
-      values[1] = 0;
-      setCalculatorState({
-        displayValue: `${values[0]}`,
-        operation: equals ? null : operation,
-        current: equals ? 0 : 1,
-        //clearDisplay: !equals,
-        clearDisplay: true,
-        values,
-      });
-    }
-  };
-  */
-
   const setOperation = (operation) => {
     if (calculatorState.current === "0") {
       setCalulatorState((previousState) => {
